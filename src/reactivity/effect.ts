@@ -1,6 +1,13 @@
+import { extend } from '../shared'
+
 class ReactiveEffect {
   private _fn: any
-  constructor(fn) {
+  public scheduler: any
+
+  stopIsActive = true
+  onStop?: () => void
+  deps = []
+  constructor(fn, scheduler?) {
     this._fn = fn // 传进来的方法
   }
 
@@ -11,6 +18,28 @@ class ReactiveEffect {
     // 调用effect时，立即执行传进来的方法，并将方法执行的结果返回
     return this._fn()
   }
+
+  stop() {
+    //   清空deps里面的effect
+
+    // this.deps.forEach((item: any) => {
+    //   item.delete(this)
+    // })
+    if (this.stopIsActive) {
+      cleanupEffect(this)
+
+      if (this.onStop) {
+        this.onStop()
+      }
+      this.stopIsActive = false
+    }
+  }
+}
+
+function cleanupEffect(effect) {
+  effect.deps.forEach((element: any) => {
+    element.delete(effect)
+  })
 }
 
 const targetMap = new Map()
@@ -30,26 +59,43 @@ export const track = (target, key) => {
     depsMap.set(key, dep)
   }
 
+  if (!activeEffect) return
+
   dep.add(activeEffect)
+  activeEffect.deps.push(dep)
 }
 
 export const trigger = (target, key) => {
   let depsMap = targetMap.get(target)
   let dep = depsMap.get(key)
 
-  for (const item of dep) {
-    item.run()
+  for (const effect of dep) {
+    // scheduler 的实现 当有 scheduler 时执行
+    if (effect.scheduler) {
+      effect.scheduler()
+    } else {
+      effect.run()
+    }
   }
 }
 
 let activeEffect
 
-export const effect = (fn) => {
-  const _effect = new ReactiveEffect(fn)
+// 将传入的函数转化为reactiveEffect格式的函数
+export const effect = (fn, options: any = {}) => {
+  const _effect = new ReactiveEffect(fn, options.scheduler)
+
+  //  options
+  //   Object.assign(_effect, options)
+  extend(_effect, options)
+
   _effect.run()
 
-  //   _effect.run.bind(_effect) 是需要有一个fn执行结果的返回值的
-  return _effect.run.bind(_effect)
+  // return _effect.run.bind(_effect) // 是需要有一个fn执行结果的返回值的
+  const runner: any = _effect.run.bind(_effect)
+  runner.effect = _effect // 给runner的effect赋值，这样可以在stop里面调用它
+
+  return runner
 
   //   墨迹写法
   //   返回一个runner，调用这个runner的时候会再次执行传进effect的fn
@@ -58,4 +104,8 @@ export const effect = (fn) => {
   //     const res = _effect.run()
   //     return res
   //   }
+}
+
+export const stop = (runner) => {
+  runner.effect.stop()
 }
