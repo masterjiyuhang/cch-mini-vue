@@ -30,8 +30,6 @@ async function run() {
     let resolvedTargets = targets.length
       ? fuzzyMatchTarget(targets, buildAllMatching)
       : allTargets
-    resolvedTargets = ['cch-vue']
-    console.log(resolvedTargets, 'resolvedTargets', prodOnly, !devOnly, devOnly)
     await buildAll(resolvedTargets)
   } finally {
     console.log('end build..')
@@ -96,6 +94,8 @@ async function build(target) {
   // 读取目标包的 package.json 文件
   const pkg = require(`${pkgDir}/package.json`)
 
+  console.log(target, 'target: ' + target)
+
   // 如果这是一个完整构建（没有指定特定的目标），并且包是私有的，则忽略构建
   if ((isRelease || !targets.length) && pkg.private) {
     return
@@ -112,7 +112,11 @@ async function build(target) {
     (pkg.buildOptions && pkg.buildOptions.env) ||
     (devOnly ? 'development' : 'production')
 
-  console.log(pico.blue(formats), pico.blue(prodOnly), pico.blue(sourceMap))
+  console.log(
+    'formats: ' + pico.blue(formats),
+    'prodOnly: ' + pico.blue(prodOnly),
+    'sourceMap: ' + pico.blue(sourceMap)
+  )
   // 使用 execa 调用 rollup 构建命令
   await execa(
     'rollup',

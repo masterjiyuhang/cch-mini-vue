@@ -11,18 +11,18 @@ const resolveEntryForPkg = p =>
 
 const dirs = readdirSync(new URL('../packages', import.meta.url))
 const entries = {
-  vue: resolveEntryForPkg('cch-vue'),
+  'cch-vue': resolveEntryForPkg('cch-vue')
 }
 for (const dir of dirs) {
   const key = `@cch-vue/${dir}`
 
   if (
     dir !== 'cch-vue' &&
+    !(key in entries) &&
     statSync(new URL(`../packages/${dir}`, import.meta.url)).isDirectory()
   ) {
     entries[key] = resolveEntryForPkg(dir)
   }
 }
 
-console.log(entries)
 export { entries }
