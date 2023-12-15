@@ -28,5 +28,6 @@
   "include": [
     "packages/global.d.ts",
     "packages/*/src",
+    "packages/*/__tests__",
   ]
 }

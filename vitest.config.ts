@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { entries } from './scripts/aliases'
+import codspeedPlugin from '@codspeed/vitest-plugin'
 
 export default defineConfig({
   define: {
@@ -7,5 +8,9 @@ export default defineConfig({
   },
   resolve: {
     alias: entries
+  },
+  plugins: [codspeedPlugin()],
+  test: {
+    globals: true
   }
 })
