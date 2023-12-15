@@ -1,3 +1,4 @@
+import { isArray } from '@cch-vue/shared'
 import { Dep, createDep } from './dep'
 
 const targetMap = new WeakMap<object, any>()
@@ -8,7 +9,6 @@ export class ReactiveEffect<T = any> {
   constructor(public fn: () => T) {}
 
   run() {
-
     activeEffect = this
     return this.fn()
   }
@@ -45,7 +45,35 @@ export function track(target: object, key: unknown) {
 export function trackEffects(dep: Dep) {
   let shouldTrack = true
 
-  if(shouldTrack) {
+  if (shouldTrack) {
     dep.add(activeEffect!)
   }
+}
+
+export function trigger(target: object, key?: unknown, value?: unknown) {
+  const depsMap = targetMap.get(target)
+  if (!depsMap) {
+    // never been tracked
+    return
+  }
+
+  let deps: (Dep | undefined)[] = []
+
+  deps.push(depsMap.get(key))
+
+  if (deps.length === 1) {
+    if (deps[0]) {
+      triggerEffects(deps[0])
+    }
+  }
+}
+
+export function triggerEffects(dep: Dep | ReactiveEffect[]) {
+  const effects = isArray(dep) ? dep : [...dep]
+  for (const effect of effects) {
+    triggerEffect(effect)
+  }
+}
+function triggerEffect(effect: ReactiveEffect) {
+  effect.run()
 }

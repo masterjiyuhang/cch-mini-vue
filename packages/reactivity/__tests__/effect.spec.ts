@@ -10,7 +10,6 @@ describe('reactive/effect', () => {
     let nextAge
 
     effect(() => {
-      console.log('运行')
       nextAge = user.age + 10
     })
 
