@@ -1,4 +1,4 @@
-import { reactive } from '../src/reactive'
+import { isReactive, reactive } from '../src/reactive'
 
 describe('reactive', () => {
   test('Object', () => {
@@ -9,5 +9,10 @@ describe('reactive', () => {
 
     // get
     expect(observed.foo).toBe(1)
+  })
+
+  it('isReactive', () => {
+    const data = reactive({ p: 'n' })
+    expect(isReactive(data)).toBe(true)
   })
 })

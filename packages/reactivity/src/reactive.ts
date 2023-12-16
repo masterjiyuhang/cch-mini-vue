@@ -39,8 +39,14 @@ function createReactiveObject(
 
   const proxy = new Proxy(target, {
     get(target: Target, key: string | symbol, receiver: object) {
+      let _isReadonly = false
       const res = Reflect.get(target, key, receiver)
       console.log('get...', key)
+      if (key === ReactiveFlags.IS_REACTIVE) {
+        return !_isReadonly
+      } else if (key === ReactiveFlags.IS_READONLY) {
+        return _isReadonly
+      }
       track(target, key)
       return res
     },
@@ -54,4 +60,8 @@ function createReactiveObject(
 
   proxyMap.set(target, proxy)
   return proxy
+}
+
+export function isReactive(value: unknown): boolean {
+  return !!(value && (value as Target)[ReactiveFlags.IS_REACTIVE])
 }
