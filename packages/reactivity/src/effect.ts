@@ -29,6 +29,7 @@ export function effect<T = any>(fn: () => T) {
   return runner
 }
 
+// 添加订阅
 export function track(target: object, key: unknown) {
   let depsMap = targetMap.get(target)
   if (!depsMap) {
@@ -50,6 +51,7 @@ export function trackEffects(dep: Dep) {
   }
 }
 
+// 发布执行
 export function trigger(target: object, key?: unknown, value?: unknown) {
   const depsMap = targetMap.get(target)
   if (!depsMap) {
