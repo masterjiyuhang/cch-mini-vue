@@ -11,8 +11,19 @@ describe('reactive', () => {
     expect(observed.foo).toBe(1)
   })
 
+  test('nested reactives', () => {
+    const original = {
+      nested: {
+        foo: 1
+      }
+    }
+    const observed = reactive(original)
+
+    expect(isReactive(observed.nested)).toBe(true)
+  })
+
   it('isReactive', () => {
-    const data = reactive({ p: 'n' })
+    const data = reactive({ foo: 'bar' })
     expect(isReactive(data)).toBe(true)
   })
 })

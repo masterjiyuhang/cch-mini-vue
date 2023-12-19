@@ -1,5 +1,5 @@
 import { isObject } from '@cch-vue/shared'
-import { track, trigger } from './effect'
+import { mutableHandlers, readonlyHandlers } from './baseHandlers'
 
 export const enum ReactiveFlags {
   SKIP = '__v_skip',
@@ -22,64 +22,42 @@ export const readonlyMap = new WeakMap<Target, any>()
 export const shallowReadonlyMap = new WeakMap<Target, any>()
 
 export function reactive<T extends object>(target: T): T {
-  return createReactiveObject(target, false, reactiveMap)
+  // 如果尝试监听一个只读的代理，直接返回只读对象。
+  if (isReadonly(target)) {
+    return target
+  }
+  return createReactiveObject(target, false, mutableHandlers, reactiveMap)
+}
+
+export function readonly<T extends object>(target: T): T {
+  return createReactiveObject(target, true, readonlyHandlers, readonlyMap)
 }
 
 function createReactiveObject(
   target: Target,
   isReadonly: boolean,
+  baseHandlers: ProxyHandler<any>,
   proxyMap: WeakMap<Target, any>
 ) {
+  // 要代理的不是一个对象
   if (!isObject(target)) {
     return target
   }
 
-  // target already has corresponding Proxy
+  if (
+    target[ReactiveFlags.RAW] &&
+    !(isReadonly && target[ReactiveFlags.IS_REACTIVE])
+  ) {
+    return target
+  }
+
+  // 已经有了一个一样的对象被代理过了 直接返回代理对象
   const existingProxy = proxyMap.get(target)
   if (existingProxy) {
     return existingProxy
   }
 
-  const proxy = new Proxy(target, {
-    get(target: Target, key: string | symbol, receiver: object) {
-      let _isReadonly = false
-      let shallow = false
-      const res = Reflect.get(target, key, receiver)
-      console.log('get...', key)
-      if (key === ReactiveFlags.IS_REACTIVE) {
-        return !_isReadonly
-      } else if (key === ReactiveFlags.IS_READONLY) {
-        return _isReadonly
-      }else if (key === ReactiveFlags.RAW) {
-        if (
-          receiver ===
-            (isReadonly
-              ? shallow
-                ? shallowReadonlyMap
-                : readonlyMap
-              : shallow
-                ? shallowReactiveMap
-                : reactiveMap
-            ).get(target) ||
-          // receiver is not the reactive proxy, but has the same prototype
-          // this means the reciever is a user proxy of the reactive proxy
-          Object.getPrototypeOf(target) === Object.getPrototypeOf(receiver)
-        ) {
-          return target
-        }
-        // early return undefined
-        return
-      }
-      track(target, key)
-      return res
-    },
-    set(target, key, value): boolean {
-      console.log('set...', key, value)
-      const result = Reflect.set(target, key, value)
-      trigger(target, key, value)
-      return result
-    }
-  })
+  const proxy = new Proxy(target, baseHandlers)
 
   proxyMap.set(target, proxy)
   return proxy
