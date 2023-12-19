@@ -67,6 +67,14 @@ export function trigger(target: object, key?: unknown, value?: unknown) {
     if (deps[0]) {
       triggerEffects(deps[0])
     }
+  } else {
+    const effects: ReactiveEffect[] = []
+    for (const dep of deps) {
+      if (dep) {
+        effects.push(...dep)
+      }
+    }
+    triggerEffects(createDep(effects))
   }
 }
 
