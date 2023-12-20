@@ -130,4 +130,36 @@ describe('reactive/effect', () => {
     expect(temp1).toBe(false)
     expect(temp2).toBe(true)
   })
+
+  it('should observe function valued properties', () => {
+    const oldFunc = () => {}
+    const newFunc = () => {}
+
+    let dummy
+    const obj = reactive({ func: oldFunc })
+    effect(() => (dummy = obj.func))
+
+    expect(dummy).toBe(oldFunc)
+    obj.func = newFunc
+    expect(dummy).toBe(newFunc)
+  })
+
+  it('should return a new reactive version of the function', () => {
+    function greet() {
+      return 'Hello World'
+    }
+    const effect1 = effect(greet)
+    const effect2 = effect(greet)
+    expect(typeof effect1).toBe('function')
+    expect(typeof effect2).toBe('function')
+    expect(effect1).not.toBe(greet)
+    expect(effect1).not.toBe(effect2)
+  })
+
+  it('should not double wrap if the passed function is a effect', () => {
+    const runner = effect(() => {})
+    const otherRunner = effect(runner)
+    expect(runner).not.toBe(otherRunner)
+    expect(runner.effect.fn).toBe(otherRunner.effect.fn)
+  })
 })
