@@ -1,4 +1,4 @@
-import { isObject } from '@cch-vue/shared'
+import { hasChanged, isObject } from '@cch-vue/shared'
 import { track, trigger } from './effect'
 import {
   ReactiveFlags,
@@ -74,9 +74,16 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     super(readonly, shallow)
   }
   set(target: Target, key: string | symbol, value: any) {
+    let oldValue = (target as any)[key]
     const res = Reflect.set(target, key, value)
-
-    trigger(target, key, value)
+    const hadKey = Object.prototype.hasOwnProperty.call(target, key)
+    if (!hadKey) {
+      // ADD
+      trigger(target, key, value)
+    } else if (hasChanged(value, oldValue)) {
+      // SET
+      trigger(target, key, value)
+    }
     return res
   }
 }
