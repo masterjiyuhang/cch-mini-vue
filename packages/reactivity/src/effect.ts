@@ -22,6 +22,12 @@ export class ReactiveEffect<T = any> {
   parent: ReactiveEffect | undefined = undefined
   // 用来存储所有与该副作用函数相关联的依赖集合
   deps: Dep[] = []
+  onStop?: () => void
+
+  /**
+   * @internal
+   */
+  private deferStop?: boolean
 
   constructor(
     public fn: () => T,
@@ -64,6 +70,23 @@ export class ReactiveEffect<T = any> {
       shouldTrack = lastShouldTrack
       // 清空当前effect的操作
       this.parent = undefined
+
+      if (this.deferStop) {
+        this.stop()
+      }
+    }
+  }
+
+  stop() {
+    // stopped while running itself - defer the cleanup
+    if (activeEffect === this) {
+      this.deferStop = true
+    } else if (this.active) {
+      cleanupEffect(this)
+      if (this.onStop) {
+        this.onStop()
+      }
+      this.active = false
     }
   }
 }
@@ -101,6 +124,10 @@ export function effect<T = any>(
   const runner = _effect.run.bind(_effect) as ReactiveEffectRunner
   runner.effect = _effect
   return runner
+}
+
+export const stopRunner = (runner: ReactiveEffectRunner) => {
+  runner.effect.stop()
 }
 
 // 添加订阅

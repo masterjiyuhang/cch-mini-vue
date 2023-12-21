@@ -1,4 +1,4 @@
-import { effect } from '../src/effect'
+import { effect, stopRunner } from '../src/effect'
 import { reactive } from '../src/reactive'
 
 describe('reactive/effect', () => {
@@ -161,5 +161,23 @@ describe('reactive/effect', () => {
     const otherRunner = effect(runner)
     expect(runner).not.toBe(otherRunner)
     expect(runner.effect.fn).toBe(otherRunner.effect.fn)
+  })
+
+  it('stop', () => {
+    let dummy
+    const obj = reactive({ prop: 1 })
+    const runner = effect(() => {
+      dummy = obj.prop
+    })
+    obj.prop = 2
+    expect(dummy).toBe(2)
+
+    stopRunner(runner)
+    obj.prop = 3
+    expect(dummy).toBe(2)
+
+    // stopped effect should still be manually callable
+    runner()
+    expect(dummy).toBe(3)
   })
 })
