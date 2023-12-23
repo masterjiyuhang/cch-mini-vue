@@ -179,5 +179,9 @@ describe('reactive/effect', () => {
     // stopped effect should still be manually callable
     runner()
     expect(dummy).toBe(3)
+
+    obj.prop++
+    runner()
+    expect(dummy).toBe(4)
   })
 })
