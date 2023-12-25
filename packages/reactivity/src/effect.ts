@@ -114,6 +114,7 @@ export function effect<T = any>(
   const _effect = new ReactiveEffect(fn)
 
   if (options) {
+    // 将options选项挂载到对应的副作用函数上
     Object.assign(_effect, options)
   }
 
@@ -200,6 +201,7 @@ function triggerEffect(effect: ReactiveEffect) {
   // 如果是活跃的 effect，说明当前的 effect 函数正在被其他 effect 函数中调用，
   // 为了防止无限递归调用，就不再执行它。
   if (effect !== activeEffect) {
+    // 如果一个副作用函数中存在调度器，则调用该调度器，并将副作用函数作为参数传递进去。
     if (effect.scheduler) {
       effect.scheduler()
     } else {

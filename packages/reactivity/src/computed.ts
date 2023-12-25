@@ -6,6 +6,7 @@ export function computed(getter: () => any) {
   // dirty 标识位 用来标识是否需要重新计算值 为true则意味着 脏，需要计算
   let dirty = true
   const effectFn = effect(getter, {
+    // 只有当调用值.value 的时候才执行
     lazy: true,
     // 添加调度器 在调度器中将 dirty 重置为 true
     // 如果没有这个调度器，修改依赖的值的时候，再次访问返回值不会发生变化
