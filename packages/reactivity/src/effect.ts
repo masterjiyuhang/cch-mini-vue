@@ -79,14 +79,21 @@ export class ReactiveEffect<T = any> {
   }
 
   stop() {
-    // stopped while running itself - defer the cleanup
+    // 检查当前的activeEffect是否就是当前effect对象的this
+    // 如果是说明当前effect是正在运行的，此时将 deferStop 设置为true。
+    // 这样做是为了在effect函数中通过调用stop方法来延迟停止effect的执行，而不是立即执行。
     if (activeEffect === this) {
       this.deferStop = true
-    } else if (this.active) {
+    }
+    // 如果当前的 effect 不是正在运行的 effect，并且当前的 effect 是活跃的（active 属性为 true），则执行下面的操作。
+    else if (this.active) {
+      // 调用 cleanupEffect 函数，该函数用于清理与 effect 相关的依赖和其他资源。这是确保在停止 effect 时进行必要的清理工作。
       cleanupEffect(this)
+      // 如果 effect 对象有 onStop 回调函数，就调用这个回调函数。这是为了在 effect 停止时执行一些用户定义的清理逻辑。
       if (this.onStop) {
         this.onStop()
       }
+      // 将 active 属性设置为 false，表示当前的 effect 不再处于活跃状态。
       this.active = false
     }
   }
