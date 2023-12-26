@@ -17,6 +17,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     protected readonly _shallow = false
   ) {}
 
+  // 拦截读取操作
   get(target: Target, key: string | symbol, receiver: object) {
     const isReadonly = this._isReadonly
     const shallow = this._shallow
@@ -65,6 +66,8 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     if (isObject(res)) {
       return isReadonly ? readonly(res) : reactive(res)
     }
+
+    // 返回具体的属性值
     return res
   }
 }
