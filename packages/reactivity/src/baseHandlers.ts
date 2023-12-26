@@ -52,6 +52,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
       return
     }
 
+    // const targetIsArray = isArray(target)
     // TODO target is Array
     if (!isReadonly) {
     }
@@ -60,6 +61,10 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
 
     if (!isReadonly) {
       track(target, key)
+    }
+
+    if (shallow) {
+      return res
     }
 
     // 处理嵌套对象
@@ -92,8 +97,8 @@ class MutableReactiveHandler extends BaseReactiveHandler {
 }
 
 class ReadonlyReactiveHandler extends BaseReactiveHandler {
-  constructor(readonly = true, shallow = false) {
-    super(readonly, shallow)
+  constructor(shallow = false) {
+    super(true, shallow)
   }
 
   set(target: object, key: string | symbol) {
@@ -105,3 +110,6 @@ export const mutableHandlers: ProxyHandler<object> =
 
 export const readonlyHandlers: ProxyHandler<object> =
   new ReadonlyReactiveHandler()
+
+export const shallowReadonlyHandlers: ProxyHandler<object> =
+  new ReadonlyReactiveHandler(true)

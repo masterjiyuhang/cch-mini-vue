@@ -1,5 +1,9 @@
 import { isObject } from '@cch-vue/shared'
-import { mutableHandlers, readonlyHandlers } from './baseHandlers'
+import {
+  mutableHandlers,
+  readonlyHandlers,
+  shallowReadonlyHandlers
+} from './baseHandlers'
 
 export const enum ReactiveFlags {
   SKIP = '__v_skip',
@@ -31,6 +35,15 @@ export function reactive<T extends object>(target: T): T {
 
 export function readonly<T extends object>(target: T): T {
   return createReactiveObject(target, true, readonlyHandlers, readonlyMap)
+}
+
+export function shallowReadonly<T extends object>(target: T): T {
+  return createReactiveObject(
+    target,
+    true,
+    shallowReadonlyHandlers,
+    shallowReactiveMap
+  )
 }
 
 function createReactiveObject(
