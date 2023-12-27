@@ -1,4 +1,4 @@
-import { isReactive, reactive } from '../src/reactive'
+import { isReactive, reactive, toRaw } from '../src/reactive'
 
 describe('reactive', () => {
   test('Object', () => {
@@ -25,5 +25,12 @@ describe('reactive', () => {
   it('isReactive', () => {
     const data = reactive({ foo: 'bar' })
     expect(isReactive(data)).toBe(true)
+  })
+
+  it('toRaw', () => {
+    const original = { foo: 1 }
+    const observed = reactive(original)
+    expect(toRaw(original)).toBe(original)
+    expect(toRaw(observed)).toBe(original)
   })
 })

@@ -78,8 +78,8 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
 }
 
 class MutableReactiveHandler extends BaseReactiveHandler {
-  constructor(readonly = false, shallow = false) {
-    super(readonly, shallow)
+  constructor(shallow = false) {
+    super(false, shallow)
   }
   set(target: Target, key: string | symbol, value: any) {
     let oldValue = (target as any)[key]
@@ -113,3 +113,6 @@ export const readonlyHandlers: ProxyHandler<object> =
 
 export const shallowReadonlyHandlers: ProxyHandler<object> =
   new ReadonlyReactiveHandler(true)
+
+export const shallowReactiveHandlers: ProxyHandler<object> =
+  new MutableReactiveHandler(true)

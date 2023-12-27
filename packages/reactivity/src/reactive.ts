@@ -2,6 +2,7 @@ import { isObject } from '@cch-vue/shared'
 import {
   mutableHandlers,
   readonlyHandlers,
+  shallowReactiveHandlers,
   shallowReadonlyHandlers
 } from './baseHandlers'
 
@@ -31,6 +32,22 @@ export function reactive<T extends object>(target: T): T {
     return target
   }
   return createReactiveObject(target, false, mutableHandlers, reactiveMap)
+}
+
+export declare const ShallowReactiveMarker: unique symbol
+export type ShallowReactive<T> = T & { [ShallowReactiveMarker]?: true }
+/**
+ * Shallow version of {@link reactive()}
+ * @param target The source target
+ * @returns
+ */
+export function shallowReactive<T extends object>(target: T): T {
+  return createReactiveObject(
+    target,
+    false,
+    shallowReactiveHandlers,
+    shallowReactiveMap
+  )
 }
 
 export function readonly<T extends object>(target: T): T {
@@ -86,3 +103,22 @@ export function isReactive(value: unknown): boolean {
   }
   return !!(value && (value as Target)[ReactiveFlags.IS_REACTIVE])
 }
+
+export function isShallow(value: unknown): boolean {
+  return !!(value && (value as Target)[ReactiveFlags.IS_SHALLOW])
+}
+
+export function isProxy(value: unknown): boolean {
+  return isReactive(value) || isReadonly(value)
+}
+
+export function toRaw<T>(observed: T): T {
+  const raw = observed && (observed as Target)[ReactiveFlags.RAW]
+  return raw ? toRaw(raw) : observed
+}
+
+export const toReactive = <T extends unknown>(value: T): T =>
+  isObject(value) ? reactive(value) : value
+
+export const toReadonly = <T extends unknown>(value: T): T =>
+  isObject(value) ? readonly(value) : value
