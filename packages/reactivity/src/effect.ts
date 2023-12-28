@@ -99,8 +99,6 @@ export class ReactiveEffect<T = any> {
   }
 }
 
-export let shouldTrack = true
-
 function cleanupEffect(effect: ReactiveEffect) {
   const { deps } = effect
   if (deps.length) {
@@ -127,6 +125,7 @@ export function effect<T = any>(
   }
 
   if (!options || !options.lazy) {
+    // 创建effect时，立即执行一次回调函数。 建立响应式依赖关系。
     _effect.run()
   }
 
@@ -139,26 +138,48 @@ export const stopRunner = (runner: ReactiveEffectRunner) => {
   runner.effect.stop()
 }
 
-// 添加订阅
-export function track(target: object, key: unknown) {
-  if (!isTracking()) {
-    return
-  }
-  // 在副作用函数与被操作的目标字段之前建立明确的联系
-  let depsMap = targetMap.get(target)
-  if (!depsMap) {
-    targetMap.set(target, (depsMap = new Map()))
-  }
-  let deps = depsMap.get(key)
-  if (!deps) {
-    depsMap.set(key, (deps = createDep()))
-  }
+export let shouldTrack = true
+const trackStack: boolean[] = []
 
-  trackEffects(deps)
+/**
+ * Temporarily pauses tracking.
+ */
+export function pauseTracking() {
+  trackStack.push(shouldTrack)
+  shouldTrack = false
 }
 
-export function isTracking() {
-  return shouldTrack && !!activeEffect
+/**
+ * Re-enables effect tracking (if it was paused).
+ */
+export function enableTracking() {
+  trackStack.push(shouldTrack)
+  shouldTrack = true
+}
+
+/**
+ * Resets the previous global effect tracking state.
+ */
+export function resetTracking() {
+  const last = trackStack.pop()
+  shouldTrack = last === undefined ? true : last
+}
+
+// 添加订阅
+export function track(target: object, key: unknown) {
+  if (shouldTrack && activeEffect) {
+    // 在副作用函数与被操作的目标字段之前建立明确的联系
+    let depsMap = targetMap.get(target)
+    if (!depsMap) {
+      targetMap.set(target, (depsMap = new Map()))
+    }
+    let deps = depsMap.get(key)
+    if (!deps) {
+      depsMap.set(key, (deps = createDep()))
+    }
+
+    trackEffects(deps)
+  }
 }
 
 export function trackEffects(deps: Dep) {
