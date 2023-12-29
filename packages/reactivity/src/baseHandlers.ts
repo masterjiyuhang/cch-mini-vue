@@ -1,5 +1,12 @@
-import { hasChanged, isObject } from '@cch-vue/shared'
-import { track, trigger } from './effect'
+import {
+  hasChanged,
+  hasOwn,
+  isArray,
+  isObject,
+  isSymbol,
+  makeMap
+} from '@cch-vue/shared'
+import { pauseTracking, resetTracking, track, trigger } from './effect'
 import {
   ReactiveFlags,
   Target,
@@ -8,8 +15,64 @@ import {
   readonly,
   readonlyMap,
   shallowReactiveMap,
-  shallowReadonlyMap
+  shallowReadonlyMap,
+  toRaw
 } from './reactive'
+
+const arrayInstrumentations = createArrayInstrumentations()
+
+const isNonTrackableKeys = makeMap(`__proto__,__v_isRef,__isVue`)
+
+const builtInSymbols = new Set(
+  /*#__PURE__*/
+  Object.getOwnPropertyNames(Symbol)
+    // ios10.x Object.getOwnPropertyNames(Symbol) can enumerate 'arguments' and 'caller'
+    // but accessing them on Symbol leads to TypeError because Symbol is a strict mode
+    // function
+    .filter(key => key !== 'arguments' && key !== 'caller')
+    .map(key => (Symbol as any)[key])
+    .filter(isSymbol)
+)
+
+function createArrayInstrumentations() {
+  const instrumentations: Record<string, Function> = {}
+  // instrument identity-sensitive Array methods to account for possible reactive
+  // values
+  ;(['includes', 'indexOf', 'lastIndexOf'] as const).forEach(key => {
+    instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
+      const arr = toRaw(this) as any
+      for (let i = 0, l = this.length; i < l; i++) {
+        track(arr, i + '')
+      }
+      // we run the method using the original args first (which may be reactive)
+      const res = arr[key](...args)
+      if (res === -1 || res === false) {
+        // if that didn't work, run it again using raw values.
+        return arr[key](...args.map(toRaw))
+      } else {
+        return res
+      }
+    }
+  })
+  // instrument length-altering mutation methods to avoid length being tracked
+  // which leads to infinite loops in some cases (#2137)
+  // feat: avoid length mutating array methods causing infinite update
+  ;(['push', 'pop', 'shift', 'unshift', 'splice'] as const).forEach(key => {
+    instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
+      pauseTracking()
+      const res = (toRaw(this) as any)[key].apply(this, args)
+      resetTracking()
+      return res
+    }
+  })
+  return instrumentations
+}
+
+function hasOwnProperty(this: object, key: string) {
+  const obj = toRaw(this)
+  track(obj, key)
+  return obj.hasOwnProperty(key)
+}
 
 class BaseReactiveHandler implements ProxyHandler<Target> {
   constructor(
@@ -52,12 +115,21 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
       return
     }
 
-    // const targetIsArray = isArray(target)
-    // TODO target is Array
+    const targetIsArray = isArray(target)
     if (!isReadonly) {
+      if (targetIsArray && hasOwn(arrayInstrumentations, key)) {
+        return Reflect.get(arrayInstrumentations, key, receiver)
+      }
+      if (key === 'hasOwnProperty') {
+        return hasOwnProperty
+      }
     }
 
     const res = Reflect.get(target, key)
+
+    if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
+      return res
+    }
 
     if (!isReadonly) {
       track(target, key)

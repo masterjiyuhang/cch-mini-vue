@@ -184,4 +184,18 @@ describe('reactive/effect', () => {
     runner()
     expect(dummy).toBe(4)
   })
+
+  it('test array push/pop/shift/unshift', () => {
+    const arr = reactive<number[]>([])
+    const spy1 = vi.fn(() => arr.push(1))
+    const spy2 = vi.fn(() => arr.pop())
+
+    effect(spy1)
+    expect(spy1).toHaveBeenCalledTimes(1)
+    expect(arr.length).toBe(1)
+
+    effect(spy2)
+    expect(spy2).toHaveBeenCalledTimes(1)
+    expect(arr.length).toBe(0)
+  })
 })
