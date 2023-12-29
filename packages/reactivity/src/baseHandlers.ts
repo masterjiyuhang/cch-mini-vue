@@ -126,7 +126,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
       }
     }
 
-    const res = Reflect.get(target, key)
+    const res = Reflect.get(target, key) // taeget.key
 
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res

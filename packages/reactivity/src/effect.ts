@@ -166,9 +166,9 @@ export function resetTracking() {
 }
 
 export function trackEffects(deps: Dep) {
-  let shouldTrack = false
-  shouldTrack = !deps.has(activeEffect!)
-  if (shouldTrack) {
+  // let shouldTrack = false
+  // shouldTrack = !deps.has(activeEffect!)
+  if (!deps.has(activeEffect!)) {
     // 将副作用函数 effect 添加到存储副作用函数的🪣中
     deps.add(activeEffect!)
     // deps 就是一个与当前副作用函数存在「联系」的依赖集合，将其添加到 activeEffect.deps数组中。 完成对依赖结合的收集。
