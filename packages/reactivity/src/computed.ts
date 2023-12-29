@@ -1,4 +1,6 @@
-import { effect, track, trigger } from './effect'
+import { TrackOpTypes, TriggerOpTypes } from './constants'
+import { effect } from './effect'
+import { track, trigger } from './reactiveEffect'
 
 export function computed(getter: () => any) {
   // 用来缓存上一次计算的值
@@ -17,7 +19,7 @@ export function computed(getter: () => any) {
       dirty = true
 
       // 当计算属性依赖的响应式数据发生变化的时候，会执行调度函数，在调度函数中手动调用trigger函数，触发响应
-      trigger(obj, 'value')
+      trigger(obj, TriggerOpTypes.SET, 'value')
     }
   })
 
@@ -33,7 +35,7 @@ export function computed(getter: () => any) {
       // 当读取value属性的时候，手动调用track进行函数追踪
       // 当读取一个计算属性的value时，手动调用track ，把计算属性返回对象obj作为target，同时作为第一个参数传递个track
       // 会建立 computed(obj) -> value -> effectFn 这样的关系
-      track(obj, 'value')
+      track(obj, TrackOpTypes.GET, 'value')
 
       return value
     }

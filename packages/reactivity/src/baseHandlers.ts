@@ -6,9 +6,8 @@ import {
   isSymbol,
   makeMap
 } from '@cch-vue/shared'
-import { pauseTracking, resetTracking, track, trigger } from './effect'
+import { pauseTracking, resetTracking } from './effect'
 import {
-  ReactiveFlags,
   Target,
   reactive,
   reactiveMap,
@@ -18,6 +17,8 @@ import {
   shallowReadonlyMap,
   toRaw
 } from './reactive'
+import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from './constants'
+import { track, trigger } from './reactiveEffect'
 
 const arrayInstrumentations = createArrayInstrumentations()
 
@@ -42,7 +43,7 @@ function createArrayInstrumentations() {
     instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
       const arr = toRaw(this) as any
       for (let i = 0, l = this.length; i < l; i++) {
-        track(arr, i + '')
+        track(arr, TrackOpTypes.GET, i + '')
       }
       // we run the method using the original args first (which may be reactive)
       const res = arr[key](...args)
@@ -70,7 +71,7 @@ function createArrayInstrumentations() {
 
 function hasOwnProperty(this: object, key: string) {
   const obj = toRaw(this)
-  track(obj, key)
+  track(obj, TrackOpTypes.HAS, key)
   return obj.hasOwnProperty(key)
 }
 
@@ -132,7 +133,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     }
 
     if (!isReadonly) {
-      track(target, key)
+      track(target, TrackOpTypes.GET, key)
     }
 
     if (shallow) {
@@ -159,10 +160,10 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     const hadKey = Object.prototype.hasOwnProperty.call(target, key)
     if (!hadKey) {
       // ADD
-      trigger(target, key, value)
+      trigger(target, TriggerOpTypes.ADD, key, value)
     } else if (hasChanged(value, oldValue)) {
       // SET
-      trigger(target, key, value)
+      trigger(target, TriggerOpTypes.SET, key, value)
     }
     return res
   }
