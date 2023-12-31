@@ -14,7 +14,7 @@ export function ref(value?: unknown) {
   const res = new RefImpl(value)
   return res
 }
-
+// 创建一个对象包裹基础类型 使其可以监听值的变化
 class RefImpl<T> {
   private _value: T
 
