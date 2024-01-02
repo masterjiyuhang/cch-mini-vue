@@ -1,4 +1,4 @@
-import { isObject } from '@cch-vue/shared'
+import { hasChanged, isObject } from '@cch-vue/shared'
 import { reactive } from '.'
 import { type Dep } from './dep'
 import {
@@ -8,7 +8,7 @@ import {
   trackEffects,
   triggerEffects
 } from './effect'
-import { toRaw } from './reactive'
+import { isReadonly, isShallow, toRaw } from './reactive'
 
 declare const RefSymbol: unique symbol
 export declare const RawSymbol: unique symbol
@@ -23,16 +23,43 @@ export interface Ref<T = any> {
   [RefSymbol]: true
 }
 export function ref(value?: unknown): any {
-  return new RefImpl(value)
+  // return new RefImpl(value)
+  return createRef(value, false)
 }
+
+export function shallowRef(value?: unknown) {
+  return createRef(value, true)
+}
+
+function createRef(rawValue: unknown, shallow: boolean) {
+  if (isRef(rawValue)) {
+    return rawValue
+  }
+  return new RefImpl(rawValue, shallow)
+}
+
+export function isRef(r: any): r is Ref {
+  return !!(r && r.__v_isRef === true)
+}
+
 // 创建一个对象包裹基础类型 使其可以监听值的变化
 class RefImpl<T> {
   private _value: T
+  private _rawValue: T
 
   public dep?: Dep = undefined
+  public readonly __v_isRef = true
 
-  constructor(value: T) {
-    this._value = isObject(value) ? reactive(value) : value
+  constructor(
+    value: T,
+    public readonly __v_isShallow: boolean
+  ) {
+    this._rawValue = __v_isShallow ? value : toRaw(value)
+    this._value = __v_isShallow
+      ? value
+      : isObject(value)
+        ? reactive(value)
+        : value
   }
 
   get value() {
@@ -41,8 +68,16 @@ class RefImpl<T> {
   }
 
   set value(newVal) {
-    triggerRefValue(this, newVal)
-    this._value = newVal
+    const useDirectValue =
+      this.__v_isShallow || isShallow(newVal) || isReadonly(newVal)
+
+    newVal = useDirectValue ? newVal : toRaw(newVal)
+
+    if (hasChanged(newVal, this._rawValue)) {
+      this._rawValue = newVal
+      this._value = newVal
+      triggerRefValue(this, newVal)
+    }
   }
 }
 
