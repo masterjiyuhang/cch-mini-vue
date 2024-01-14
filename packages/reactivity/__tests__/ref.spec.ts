@@ -43,11 +43,3 @@ describe('ssw', () => {
     expect(dummy).toBe(2)
   })
 })
-
-// {obj: 1}
-
-// {}.obj
-
-// let str = ref(1)
-// ref(1) -> toRaw -> 1
-// str.value // ref
