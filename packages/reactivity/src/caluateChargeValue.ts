@@ -1,13 +1,17 @@
 export function calculateChargeValue(inputStr: any, exchangeRate: any) {
   // 使用正则表达式匹配数字和符号
-  const regex = /(-?\$?)([+\-]?\d+)([+\-]?\¥?)(\d+)?/g
+  // let regex = null
+  // if (inputStr.indexOf('$') !== -1 && inputStr.indexOf('¥') !== -1) {
+  //   regex = /(-?\$?)([+\-]?\d+)([+\-]?¥?)(\d+)?/g
+  // }
+  const regex = /(-?\$?)([+\-]?\d+)([+\-]?\¥?)(\d+)(\.\d+)?/g
   const match: any = regex.exec(inputStr)
   let usResult = 0
   let cnResult = 0
   if (match.length === 0) {
     return inputStr
   }
-  // console.log(match, 'match');
+  // console.log(match, 'match')
   const usPositive = match.findIndex((element: any) => element === '$')
   const usMinus = match.findIndex((element: any) => element === '-$')
   const cnPositive = match.findIndex(
@@ -17,6 +21,7 @@ export function calculateChargeValue(inputStr: any, exchangeRate: any) {
   if (usPositive !== -1 || usMinus !== -1) {
     usResult = usPositive !== -1 ? match[usPositive + 1] : -match[usMinus + 1]
   }
+  // console.log(cnPositive, cnMinus)
   if (cnPositive !== -1 || cnMinus !== -1) {
     cnResult =
       cnPositive !== -1
@@ -29,13 +34,17 @@ export function calculateChargeValue(inputStr: any, exchangeRate: any) {
     inputStr
   ) {
     if (inputStr.indexOf('¥') !== -1 && inputStr.indexOf('-') === -1) {
-      return match[0] / exchangeRate
+      const r = match[0] / exchangeRate
+      return parseFloat(r.toFixed(1))
     }
     if (inputStr.indexOf('-¥') !== -1) {
-      return -match[0] / exchangeRate
+      const r = -match[0] / exchangeRate
+      return parseFloat(r.toFixed(1))
     }
   }
-  return usResult * 1 + cnResult * 1
+  const r = usResult * 1 + cnResult * 1
+  console.log(r, 'asdass')
+  return parseFloat(r.toFixed(1))
 }
 
 // chargeValue20gp : "$7+¥7"
