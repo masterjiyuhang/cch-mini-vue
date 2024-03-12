@@ -5,7 +5,7 @@ import {
   type ReactiveEffect,
   activeEffect,
   shouldTrack,
-  trackEffects,
+  trackEffect,
   triggerEffects
 } from './effect'
 
@@ -22,12 +22,12 @@ export function track(target: object, type: TrackOpTypes, key: unknown) {
     if (!depsMap) {
       targetMap.set(target, (depsMap = new Map()))
     }
-    let deps = depsMap.get(key)
-    if (!deps) {
-      depsMap.set(key, (deps = createDep()))
+    let dep = depsMap.get(key)
+    if (!dep) {
+      depsMap.set(key, (dep = createDep()))
     }
 
-    trackEffects(deps)
+    trackEffect(activeEffect, dep)
   }
 }
 
@@ -66,29 +66,33 @@ export function trigger(
       break
   }
 
-  // for( const dep of deps ) {
-  //   if(dep) {
-  //     triggerEffects(dep)
+  // // 接下来，根据数组 deps 的长度，决定如何触发副作用：
+  // // 如果 deps 中只有一个依赖，直接触发该依赖的副作用。
+  // if (deps.length === 1) {
+  //   if (deps[0]) {
+  //     triggerEffects(deps[0])
   //   }
   // }
-  // 接下来，根据数组 deps 的长度，决定如何触发副作用：
-  // 如果 deps 中只有一个依赖，直接触发该依赖的副作用。
-  if (deps.length === 1) {
-    if (deps[0]) {
-      triggerEffects(deps[0])
+  // // 如果 deps 中有多个依赖，将所有依赖的副作用合并成一个新的 Dep 对象，并触发该新的 Dep 对象的副作用。
+  // // 1. 多次调用同一个 effect 函数。多次使用相同的 target 和 key 调用 effect 函数，每次调用都会为这个依赖（Dep 对象）添加到 deps 数组中。
+  // // 2. 一个 effect 函数内部多次访问同一个键。如果在一个 effect 函数内部多次访问了同一个对象的相同键，每次访问都会为这个依赖（Dep 对象）添加到 deps 数组中
+  // else {
+  //   const effects: ReactiveEffect[] = []
+  //   for (const dep of deps) {
+  //     if (dep) {
+  //       effects.push(...dep)
+  //     }
+  //   }
+  //   // 避免无限执行
+  //   triggerEffects(createDep(effects))
+  // }
+
+  const effectsToRun: ReactiveEffect[] = []
+  for (const dep of deps) {
+    if (dep) {
+      effectsToRun.push(...dep)
     }
   }
-  // 如果 deps 中有多个依赖，将所有依赖的副作用合并成一个新的 Dep 对象，并触发该新的 Dep 对象的副作用。
-  // 1. 多次调用同一个 effect 函数。多次使用相同的 target 和 key 调用 effect 函数，每次调用都会为这个依赖（Dep 对象）添加到 deps 数组中。
-  // 2. 一个 effect 函数内部多次访问同一个键。如果在一个 effect 函数内部多次访问了同一个对象的相同键，每次访问都会为这个依赖（Dep 对象）添加到 deps 数组中
-  else {
-    const effects: ReactiveEffect[] = []
-    for (const dep of deps) {
-      if (dep) {
-        effects.push(...dep)
-      }
-    }
-    // 避免无限执行
-    triggerEffects(createDep(effects))
-  }
+  // 避免无限执行
+  triggerEffects(createDep(effectsToRun))
 }

@@ -5,7 +5,7 @@ import {
   type ReactiveEffect,
   activeEffect,
   shouldTrack,
-  trackEffects,
+  trackEffect,
   triggerEffects
 } from './effect'
 import { isReadonly, isShallow, toRaw } from './reactive'
@@ -44,8 +44,8 @@ export function isRef(r: any): r is Ref {
 
 // 创建一个对象包裹基础类型 使其可以监听值的变化
 class RefImpl<T> {
-  private _value: T
-  private _rawValue: T
+  private _value: T // 用于存储引用对象的值，存储经过处理后的值。
+  private _rawValue: T // 存储原始值
 
   public dep?: Dep = undefined
   public readonly __v_isRef = true
@@ -88,7 +88,7 @@ export function trackRefValue(ref: any) {
     if (!ref.dep) {
       ref.dep = new Set<ReactiveEffect>()
     }
-    trackEffects(ref.dep)
+    trackEffect(activeEffect, ref.dep)
   }
 }
 

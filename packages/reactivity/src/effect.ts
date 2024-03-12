@@ -165,15 +165,13 @@ export function resetTracking() {
   shouldTrack = last === undefined ? true : last
 }
 
-export function trackEffects(deps: Dep) {
-  // let shouldTrack = false
-  // shouldTrack = !deps.has(activeEffect!)
-  if (!deps.has(activeEffect!)) {
+export function trackEffect(effect: ReactiveEffect, dep: Dep) {
+  if (!dep.has(effect!)) {
     // 将副作用函数 effect 添加到存储副作用函数的🪣中
-    deps.add(activeEffect!)
-    // deps 就是一个与当前副作用函数存在「联系」的依赖集合，将其添加到 activeEffect.deps数组中。 完成对依赖结合的收集。
+    dep.add(effect!)
+    // dep 就是一个与当前副作用函数存在「联系」的依赖集合，将其添加到 activeEffect.deps数组中。 完成对依赖结合的收集。
     // 有了这个「联系」之后，每次执行副作用函数的时候，可以根据EffectFn.deps获取所有相关联的依赖集合，进而将副作用函数从依赖集合中移除。
-    activeEffect!.deps.push(deps)
+    effect!.deps.push(dep)
   }
 }
 
