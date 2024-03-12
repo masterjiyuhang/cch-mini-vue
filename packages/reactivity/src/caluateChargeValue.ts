@@ -43,7 +43,6 @@ export function calculateChargeValue(inputStr: any, exchangeRate: any) {
     }
   }
   const r = usResult * 1 + cnResult * 1
-  console.log(r, 'asdass')
   return parseFloat(r.toFixed(1))
 }
 

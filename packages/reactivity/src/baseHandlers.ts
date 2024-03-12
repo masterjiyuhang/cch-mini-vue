@@ -75,14 +75,19 @@ function hasOwnProperty(this: object, key: string) {
   return obj.hasOwnProperty(key)
 }
 
+/**
+ * @description 用于定义代理对象的各种操作行为
+ */
 class BaseReactiveHandler implements ProxyHandler<Target> {
+  // 用于指定是否为只读代理和是否为浅代理。
   constructor(
     protected readonly _isReadonly = false,
     protected readonly _shallow = false
   ) {}
 
-  // 拦截读取操作
+  // 用于拦截对目标对象属性的读取操作
   get(target: Target, key: string | symbol, receiver: object) {
+    // 首先获取构造函数中传入的 isReadonly 和 shallow 的值。
     const isReadonly = this._isReadonly
     const shallow = this._shallow
 
@@ -126,7 +131,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
       }
     }
 
-    const res = Reflect.get(target, key) // taeget.key
+    const res = Reflect.get(target, key) // target.key
 
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
