@@ -12,7 +12,7 @@
     "dist"
   ],
   "buildOptions": {
-    "name": "CchVueReactivity",
+    "name": "cch-vue-reactivity",
     "formats": [
       "esm-bundler",
       "esm-browser",

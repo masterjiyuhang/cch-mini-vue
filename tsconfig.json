@@ -22,12 +22,16 @@
     "types": ["vitest/globals", "puppeteer", "node"],
     "rootDir": ".",
     "paths": {
-      "@cch-vue/*": ["packages/*/src"],
+      "@cch-vue/*": ["packages/*/src"]
     }
   },
   "include": [
     "packages/global.d.ts",
     "packages/*/src",
-    "packages/*/__tests__",
-  ]
+    "packages/v3/*",
+    "packages/*/__tests__"
+  ],
+  "ts-node": {
+    "esm": true
+  }
 }

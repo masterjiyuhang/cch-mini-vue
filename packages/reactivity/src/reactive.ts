@@ -62,11 +62,12 @@ function createReactiveObject(
   baseHandlers: ProxyHandler<any>,
   proxyMap: WeakMap<Target, any>
 ) {
-  // 要代理的不是一个对象
+  // 要代理的不是一个对象，如果不是对象，则直接返回目标对象。
   if (!isObject(target)) {
     return target
   }
 
+  // 检查目标对象是否已经被代理过，并且是否已经存在一个相同的只读代理对象
   if (
     target[ReactiveFlags.RAW] &&
     !(isReadonly && target[ReactiveFlags.IS_REACTIVE])
@@ -74,15 +75,19 @@ function createReactiveObject(
     return target
   }
 
-  // 已经有了一个一样的对象被代理过了 直接返回代理对象
+  // 如果已经存在一个相同的代理对象，则直接返回这个已存在的代理对象。 已经有了一个一样的对象被代理过了 直接返回代理对象
   const existingProxy = proxyMap.get(target)
   if (existingProxy) {
     return existingProxy
   }
 
+  // 如果目标对象尚未被代理过，创建一个新的代理对象
   const proxy = new Proxy(target, baseHandlers)
 
+  // 将新的代理对象存储到 proxyMap 中。
   proxyMap.set(target, proxy)
+
+  // 返回这个新创建的代理对象
   return proxy
 }
 
