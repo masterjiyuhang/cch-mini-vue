@@ -1,4 +1,4 @@
-import { isArray, isMap } from '@cch-vue/shared'
+import { isArray, isIntegerKey, isMap, isSymbol } from '@cch-vue/shared'
 import { TriggerOpTypes, type TrackOpTypes } from './constants'
 import { type Dep, createDep } from './dep'
 import {
@@ -31,12 +31,21 @@ export function track(target: object, type: TrackOpTypes, key: unknown) {
   }
 }
 
-// 发布执行
+/**
+ * 触发响应式
+ * @param target 触发响应时的目标对象
+ * @param type 触发响应时的类型
+ * @param key 触发响应时的键名
+ * @param newValue 触发响应时的新值
+ * @param oldValue
+ * @returns
+ */
 export function trigger(
   target: object,
   type: TriggerOpTypes,
   key?: unknown,
-  value?: unknown
+  newValue?: unknown,
+  oldValue?: unknown
 ) {
   // 首先，通过 targetMap 获取与目标对象 target 相关的依赖映射（depsMap）。
   const depsMap = targetMap.get(target)
@@ -50,20 +59,46 @@ export function trigger(
   // 然后，定义一个数组 deps，用于存储与指定键 key 相关的所有依赖（Dep 对象）。
   let deps: (Dep | undefined)[] = []
 
-  // 将与 key 相关的依赖（Dep 对象）添加到 deps 数组中。
-  deps.push(depsMap.get(key))
+  if (type === TriggerOpTypes.CLEAR) {
+    deps = [...depsMap.values()]
+  }
+  // 如果操作目标是数组，并且修改了数组的 length 属性
+  else if (key === 'length' && isArray(target)) {
+    const newLength = Number(newValue)
+    depsMap.forEach((dep, key) => {
+      // 对于索引大于或等于新的 length 值的元素， 需要把所有相关联的副作用函数取出来并添加到 deps 中等待执行
+      if (key === 'length' || (!isSymbol(key) && key >= newLength)) {
+        deps.push(dep)
+      }
+    })
+  } else {
+    // schedule runs for SET | ADD | DELETE
+    if (key !== void 0) {
+      // 将与 key 相关的依赖（Dep 对象）添加到 deps 数组中。
+      deps.push(depsMap.get(key))
+    }
 
-  switch (type) {
-    case TriggerOpTypes.ADD:
-      if (!isArray(target)) {
-        deps.push(depsMap.get(ITERATE_KEY))
-      }
-      break
-    case TriggerOpTypes.SET:
-      if (isMap(target)) {
-        deps.push(depsMap.get(ITERATE_KEY))
-      }
-      break
+    switch (type) {
+      case TriggerOpTypes.ADD:
+        if (!isArray(target)) {
+          // 当操作类型为 ADD 并且目标对象是数组时，应该取出并执行那些与 length 属性相关联的副作用函数
+          deps.push(depsMap.get(ITERATE_KEY))
+        } else if (isIntegerKey(key)) {
+          // new index added to array -> length changes
+          deps.push(depsMap.get('length'))
+        }
+        break
+      case TriggerOpTypes.DELETE:
+        if (!isArray(target)) {
+          deps.push(depsMap.get(ITERATE_KEY))
+        }
+        break
+      case TriggerOpTypes.SET:
+        if (isMap(target)) {
+          deps.push(depsMap.get(ITERATE_KEY))
+        }
+        break
+    }
   }
 
   // // 接下来，根据数组 deps 的长度，决定如何触发副作用：
