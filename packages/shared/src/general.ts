@@ -37,3 +37,9 @@ export const hasOwn = (
 // compare whether a value has changed, accounting for NaN.
 export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue)
+
+export const isIntegerKey = (key: unknown) =>
+  isString(key) &&
+  key !== 'NaN' &&
+  key[0] !== '-' &&
+  '' + parseInt(key, 10) === key
