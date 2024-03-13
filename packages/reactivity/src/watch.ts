@@ -20,20 +20,29 @@ export function watch(
   cb: WatchCallback,
   options: WatchOptions = {}
 ) {
+  // // 定义 getter
   let getter: () => any
 
-  // 首先判断source的类型 如果是函数类型 说明用户直接传递了getter函数  这是直接使用用户的getter函数
-  // 如果不是函数类型 保留之前遍历的做法
+  // 首先判断source的类型
+  // 如果是ref类型 指向 source.value
   if (isRef(source)) {
     getter = () => source.value
-  } else if (typeof source === 'function') {
+  }
+  // 如果是函数类型 说明用户直接传递了getter函数  这是直接使用用户的getter函数
+  else if (typeof source === 'function') {
     getter = source
-  } else {
+  }
+  //  如果不是函数类型 保留之前遍历的做法
+  else {
     getter = () => traverse(source)
   }
+
+  // cleanup 用来存储用户注册的过期回调
   let cleanup: (() => void) | undefined
 
+  // 定义 onInvalidate 函数
   function onInvalidate(fn: (() => void) | undefined) {
+    // 将过期回调存储到 cleanup 中
     cleanup = fn
   }
   // 定义旧值与新值
@@ -67,6 +76,10 @@ export function watch(
     // 手动调用副作用函数，拿到的值就是旧值
     oldValue = effectFn()
   }
+
+  const unwatch = () => {}
+
+  return unwatch
 }
 
 function traverse(value: any, sceen = new Set()): any {
