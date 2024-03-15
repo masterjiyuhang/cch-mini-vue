@@ -51,6 +51,7 @@ function getTargetType(value: Target) {
     ? TargetType.INVALID
     : targetTypeMap(toRawType(value))
 }
+
 export function reactive<T extends object>(target: T): T {
   // 如果尝试监听一个只读的代理，直接返回只读对象。
   if (isReadonly(target)) {

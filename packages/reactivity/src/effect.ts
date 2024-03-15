@@ -165,7 +165,13 @@ export function resetTracking() {
   shouldTrack = last === undefined ? true : last
 }
 
+/**
+ * 用于在 effect（响应式副作用函数）与 dep（依赖集合）之间建立关联关系
+ * @param effect
+ * @param dep
+ */
 export function trackEffect(effect: ReactiveEffect, dep: Dep) {
+  // 首先检查 dep 是否已经与 effect 建立了关联
   if (!dep.has(effect!)) {
     // 将副作用函数 effect 添加到存储副作用函数的🪣中
     dep.add(effect!)

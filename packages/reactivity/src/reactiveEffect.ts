@@ -16,6 +16,7 @@ export const ITERATE_KEY = Symbol('')
 export const MAP_KEY_ITERATE_KEY = Symbol('')
 // 添加订阅
 export function track(target: object, type: TrackOpTypes, key: unknown) {
+  // 首先检查当前是否正在追踪依赖关系，并且是否有活跃的响应式副作用函数（activeEffect）
   if (shouldTrack && activeEffect) {
     // 在副作用函数与被操作的目标字段之前建立明确的联系
     let depsMap = targetMap.get(target)
@@ -27,6 +28,7 @@ export function track(target: object, type: TrackOpTypes, key: unknown) {
       depsMap.set(key, (dep = createDep()))
     }
 
+    // 建立 effect 与 dep 之间的关联关系
     trackEffect(activeEffect, dep)
   }
 }

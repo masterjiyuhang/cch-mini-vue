@@ -4,3 +4,7 @@ console.log(111)
 const obj = {
   foo: 1
 }
+
+const arr = ['Hello']
+const res = arr.join(' ')
+console.log(res + 'asd')

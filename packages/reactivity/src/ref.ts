@@ -1,5 +1,5 @@
 import { hasChanged, isObject } from '@cch-vue/shared'
-import { reactive } from '.'
+import { reactive } from './index'
 import { type Dep } from './dep'
 import {
   type ReactiveEffect,
@@ -47,9 +47,14 @@ class RefImpl<T> {
   private _value: T // 用于存储引用对象的值，存储经过处理后的值。
   private _rawValue: T // 存储原始值
 
-  public dep?: Dep = undefined
-  public readonly __v_isRef = true
+  public dep?: Dep = undefined // 用于存储与该引用对象关联的依赖集合
+  public readonly __v_isRef = true // 只读属性 用于标识该对象是一个引用对象
 
+  /**
+   * 构造函数
+   * @param value 初始值
+   * @param __v_isShallow 否浅层处理
+   */
   constructor(
     value: T,
     public readonly __v_isShallow: boolean
@@ -81,6 +86,10 @@ class RefImpl<T> {
   }
 }
 
+/**
+ * 用于获取和设置引用对象的值
+ * @param ref
+ */
 export function trackRefValue(ref: any) {
   if (shouldTrack && activeEffect) {
     ref = toRaw(ref)
@@ -92,6 +101,11 @@ export function trackRefValue(ref: any) {
   }
 }
 
+/**
+ * 用于触发引用对象的值的更新
+ * @param ref
+ * @param newVal
+ */
 export function triggerRefValue(ref: any, newVal?: any) {
   ref = toRaw(ref)
   if (ref.dep) {
